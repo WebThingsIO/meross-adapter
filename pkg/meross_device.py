@@ -48,7 +48,7 @@ class MerossDevice(Device):
             },
             self.on)
 
-        if self.meross_dev.supports_consumption_reading():
+        if self.meross_dev.supports_electricity_reading():
             self._type.append('EnergyMonitor')
 
             self.properties['power'] = MerossProperty(
@@ -63,7 +63,6 @@ class MerossDevice(Device):
                 },
                 self.power)
 
-        if self.meross_dev.supports_electricity_reading():
             self.properties['voltage'] = MerossProperty(
                 self,
                 'voltage',
@@ -75,6 +74,18 @@ class MerossDevice(Device):
                     'readOnly': True,
                 },
                 self.voltage)
+
+            self.properties['current'] = MerossProperty(
+                self,
+                'current',
+                {
+                    '@type': 'CurrentProperty',
+                    'label': 'Current',
+                    'type': 'number',
+                    'unit': 'ampere',
+                    'readOnly': True,
+                },
+                self.current)
 
         t = threading.Thread(target=self.poll)
         t.daemon = True
@@ -96,9 +107,14 @@ class MerossDevice(Device):
     @property
     def power(self):
         """Determine current power usage."""
-        return self.meross_dev.get_power_consumption()
+        return self.meross_dev.get_electricity()['electricity']['power']
 
     @property
     def voltage(self):
         """Determine current voltage."""
-        return self.meross_dev.get_electricity()
+        return self.meross_dev.get_electricity()['electricity']['voltage']
+
+    @property
+    def current(self):
+        """Determine current current."""
+        return self.meross_dev.get_electricity()['electricity']['current']

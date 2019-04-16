@@ -24,7 +24,6 @@ class MerossProperty(Property):
 
         value -- the value to set
         """
-        print('set_value', self.name, value)
         if self.name == 'on':
             success = False
             if value:
@@ -49,6 +48,8 @@ class MerossProperty(Property):
             value = self.device.power
         elif self.name == 'voltage':
             value = self.device.voltage
+        elif self.name == 'current':
+            value = self.device.current
         else:
             return
 
