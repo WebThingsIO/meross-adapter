@@ -23,13 +23,12 @@
   "files": [
     "LICENSE",
     "SHA256SUMS",
+    "lib",
     "main.py",
     "pkg/__init__.py",
     "pkg/meross_adapter.py",
     "pkg/meross_device.py",
-    "pkg/meross_property.py",
-    "requirements.txt",
-    "setup.cfg"
+    "pkg/meross_property.py"
   ],
   "moziot": {
     "api": {
