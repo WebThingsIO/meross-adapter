@@ -39,20 +39,8 @@ class MerossProperty(Property):
                 self.set_cached_value(value)
                 self.device.notify_property_changed(self)
 
-    def update(self):
+    def update(self, value):
         """Update the current value, if necessary."""
-        value = None
-        if self.name == 'on':
-            value = self.device.on
-        elif self.name == 'power':
-            value = self.device.power
-        elif self.name == 'voltage':
-            value = self.device.voltage
-        elif self.name == 'current':
-            value = self.device.current
-        else:
-            return
-
         if value != self.value:
             self.set_cached_value(value)
             self.device.notify_property_changed(self)
