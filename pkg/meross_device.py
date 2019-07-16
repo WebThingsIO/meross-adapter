@@ -27,8 +27,8 @@ class MerossDevice(Device):
         self.type = 'onOffSwitch'
 
         self.meross_dev = meross_dev
-        self.name = meross_dev._name
-        self.description = meross_dev._type
+        self.name = meross_dev.name
+        self.description = meross_dev.type
         if not self.name:
             self.name = self.description
 
@@ -46,7 +46,7 @@ class MerossDevice(Device):
                 'label': 'On/Off',
                 'type': 'boolean',
             },
-            self.on)
+            False)
 
         if self.meross_dev.supports_electricity_reading():
             self._type.append('EnergyMonitor')
@@ -58,10 +58,10 @@ class MerossDevice(Device):
                     '@type': 'InstantaneousPowerProperty',
                     'label': 'Power',
                     'type': 'number',
-                    'unit': 'Watt',
+                    'unit': 'watt',
                     'readOnly': True,
                 },
-                self.power)
+                0)
 
             self.properties['voltage'] = MerossProperty(
                 self,
@@ -73,7 +73,7 @@ class MerossDevice(Device):
                     'unit': 'volt',
                     'readOnly': True,
                 },
-                self.voltage)
+                0)
 
             self.properties['current'] = MerossProperty(
                 self,
@@ -85,7 +85,7 @@ class MerossDevice(Device):
                     'unit': 'ampere',
                     'readOnly': True,
                 },
-                self.current)
+                0)
 
         t = threading.Thread(target=self.poll)
         t.daemon = True
@@ -94,27 +94,28 @@ class MerossDevice(Device):
     def poll(self):
         """Poll the device for changes."""
         while True:
+            if not self.meross_dev.online:
+                self.connected_notify(False)
+                continue
+
+            try:
+                on = self.meross_dev.get_status(channel=self.channel)
+                self.properties['on'].update(on)
+
+                if self.meross_dev.supports_electricity_reading():
+                    e = self.meross_dev.get_electricity()
+                    self.properties['power'].update(e['power'])
+                    self.properties['voltage'].update(e['voltage'])
+                    self.properties['current'].update(e['current'])
+
+                self.connected_notify(True)
+            except:  # noqa: E722
+                # catching the exceptions from meross_iot just lead to more
+                # exceptions being thrown. cool.
+                self.connected_notify(False)
+
             time.sleep(_POLL_INTERVAL)
 
-            for prop in self.properties.values():
-                prop.update()
-
-    @property
-    def on(self):
-        """Determine whether or not the device is on."""
-        return self.meross_dev.get_status(channel=self.channel)
-
-    @property
-    def power(self):
-        """Determine current power usage."""
-        return self.meross_dev.get_electricity()['electricity']['power']
-
-    @property
-    def voltage(self):
-        """Determine current voltage."""
-        return self.meross_dev.get_electricity()['electricity']['voltage']
-
-    @property
-    def current(self):
-        """Determine current current."""
-        return self.meross_dev.get_electricity()['electricity']['current']
+    def handle_toggle(self, value):
+        """Handle a switch toggle."""
+        self.properties['on'].update(value)
