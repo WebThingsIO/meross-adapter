@@ -1,6 +1,6 @@
 # meross-adapter
 
-Meross smart plug adapter for Mozilla WebThings Gateway.
+Meross smart device adapter for Mozilla WebThings Gateway.
 
 # Supported Devices
 
@@ -8,12 +8,16 @@ Meross smart plug adapter for Mozilla WebThings Gateway.
 
 * MSS110
 * MSS310
+* MSL100
+* MSL120
 
 ## Untested but _Should Work_
 
 * MSS210
-* MSS425
-* MSS620
+* MSS310h
+* MSS425e
+* MSS530H
+* MSG100
 
 # Requirements
 
