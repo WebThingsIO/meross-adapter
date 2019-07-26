@@ -9,7 +9,7 @@ from meross_iot.cloud.devices.door_openers import GenericGarageDoorOpener
 import threading
 import time
 
-from .meross_device import MerossDevice
+from .meross_device import MerossBulb, MerossOpener, MerossPlug
 
 
 class MerossAdapter(Adapter):
@@ -22,10 +22,12 @@ class MerossAdapter(Adapter):
         verbose -- whether or not to enable verbose logging
         """
         self.name = self.__class__.__name__
-        Adapter.__init__(self,
-                         'meross-adapter',
-                         'meross-adapter',
-                         verbose=verbose)
+        Adapter.__init__(
+            self,
+            'meross-adapter',
+            'meross-adapter',
+            verbose=verbose
+        )
 
         self.manager = None
         self.pairing = False
@@ -60,7 +62,22 @@ class MerossAdapter(Adapter):
         self.pairing = True
 
         for bulb in self.manager.get_devices_by_kind(GenericBulb):
-            pass
+            if not bulb.online:
+                continue
+
+            n_channels = len(bulb.get_channels())
+
+            if n_channels > 1:
+                for channel in range(0, len(bulb.get_channels())):
+                    _id = 'meross-{}-{}'.format(bulb.uuid, channel)
+                    if _id not in self.devices:
+                        device = MerossBulb(self, _id, bulb, channel=channel)
+                        self.handle_device_added(device)
+            else:
+                _id = 'meross-{}'.format(bulb.uuid)
+                if _id not in self.devices:
+                    device = MerossBulb(self, _id, bulb)
+                    self.handle_device_added(device)
 
         for plug in self.manager.get_devices_by_kind(GenericPlug):
             if not plug.online:
@@ -72,16 +89,22 @@ class MerossAdapter(Adapter):
                 for channel in range(0, len(plug.get_channels())):
                     _id = 'meross-{}-{}'.format(plug.uuid, channel)
                     if _id not in self.devices:
-                        device = MerossDevice(self, _id, plug, channel=channel)
+                        device = MerossPlug(self, _id, plug, channel=channel)
                         self.handle_device_added(device)
             else:
                 _id = 'meross-{}'.format(plug.uuid)
                 if _id not in self.devices:
-                    device = MerossDevice(self, _id, plug)
+                    device = MerossPlug(self, _id, plug)
                     self.handle_device_added(device)
 
         for opener in self.manager.get_devices_by_kind(GenericGarageDoorOpener):  # noqa: E501
-            pass
+            if not opener.online:
+                continue
+
+            _id = 'meross-{}'.format(opener.uuid)
+            if _id not in self.devices:
+                device = MerossOpener(self, _id, opener)
+                self.handle_device_added(device)
 
         self.pairing = False
 
@@ -134,8 +157,11 @@ class MerossAdapter(Adapter):
             for device in devices:
                 device.handle_toggle(obj.switch_state)
         elif obj.event_type == MerossEventType.DEVICE_BULB_SWITCH_STATE:
-            pass
+            for device in devices:
+                device.handle_toggle(obj.is_on)
         elif obj.event_type == MerossEventType.DEVICE_BULB_STATE:
-            pass
+            for device in devices:
+                device.handle_light_state(obj.light_state)
         elif obj.event_type == MerossEventType.GARAGE_DOOR_STATUS:
-            pass
+            for device in devices:
+                device.handle_state(obj.door_state == 'open')

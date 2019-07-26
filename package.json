@@ -2,7 +2,7 @@
   "name": "meross-adapter",
   "display_name": "Meross",
   "version": "0.2.0",
-  "description": "Meross smart plug adapter plugin for Mozilla WebThings Gateway",
+  "description": "Meross smart device adapter plugin for Mozilla WebThings Gateway",
   "author": "Mozilla IoT",
   "main": "main.py",
   "keywords": [
