@@ -1,7 +1,7 @@
 {
   "name": "meross-adapter",
   "display_name": "Meross",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Meross smart device adapter plugin for Mozilla WebThings Gateway",
   "author": "Mozilla IoT",
   "main": "main.py",
@@ -22,9 +22,11 @@
   },
   "files": [
     "LICENSE",
+    "README.md",
     "SHA256SUMS",
     "lib",
     "main.py",
+    "manifest.json",
     "pkg/__init__.py",
     "pkg/meross_adapter.py",
     "pkg/meross_device.py",
