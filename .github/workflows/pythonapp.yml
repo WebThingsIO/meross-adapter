@@ -23,4 +23,4 @@ jobs:
         python -m pip install --user flake8
     - name: Lint with flake8
       run: |
-        flake8 . --count --max-line-length=79 --statistics
+        python -m flake8 . --count --max-line-length=79 --statistics
