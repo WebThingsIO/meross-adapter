@@ -340,9 +340,9 @@ class MerossPlug(MerossDevice):
 
                 if self.meross_dev.supports_electricity_reading():
                     e = self.meross_dev.get_electricity()
-                    self.properties['power'].update(e['power'])
-                    self.properties['voltage'].update(e['voltage'])
-                    self.properties['current'].update(e['current'])
+                    self.properties['power'].update(e['power'] / 1000.0)
+                    self.properties['voltage'].update(e['voltage'] / 10.0)
+                    self.properties['current'].update(e['current'] / 1000.0)
 
                 self.connected_notify(True)
             except:  # noqa: E722
