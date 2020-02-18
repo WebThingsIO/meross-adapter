@@ -56,60 +56,81 @@ class MerossBulb(MerossDevice):
         MerossDevice.__init__(self, adapter, _id, meross_dev, channel=channel)
 
         self._type = ['OnOffSwitch', 'Light']
-        self.type = 'onOffLight'
 
         self.properties['on'] = MerossBulbProperty(
             self,
             'on',
             {
                 '@type': 'OnOffProperty',
-                'label': 'On/Off',
+                'title': 'On/Off',
                 'type': 'boolean',
             },
-            False)
+            False
+        )
 
         if self.meross_dev.supports_light_control():
             self._type.append('ColorControl')
 
             color = self.meross_dev.get_light_color(channel=self.channel)
-            if 'rgb' in color and color['rgb'] != -1:
+            if self.meross_dev.is_rgb():
                 self.properties['color'] = MerossBulbProperty(
                     self,
                     'color',
                     {
                         '@type': 'ColorProperty',
-                        'label': 'Color',
+                        'title': 'Color',
                         'type': 'string',
                     },
-                    '#{:02x}'.format(color['rgb']))
-            else:
-                if 'temperature' in color and color['temperature'] != -1:
-                    self.properties['colorTemperature'] = MerossBulbProperty(
-                        self,
-                        'colorTemperature',
-                        {
-                            '@type': 'ColorTemperatureProperty',
-                            'label': 'Color Temperature',
-                            'type': 'integer',
-                            'unit': 'kelvin',
-                            'minimum': 2700,
-                            'maximum': 6500,
-                        },
-                        color['temperature'])
+                    '#{:06x}'.format(color['rgb'])
+                )
 
-                if 'luminance' in color and color['luminance'] != -1:
-                    self.properties['brightness'] = MerossBulbProperty(
-                        self,
-                        'brightness',
-                        {
-                            '@type': 'BrightnessProperty',
-                            'label': 'Brightness',
-                            'type': 'integer',
-                            'unit': 'percent',
-                            'minimum': 0,
-                            'maximum': 100,
-                        },
-                        color['luminance'])
+            if self.meross_dev.is_light_temperature():
+                self.properties['colorTemperature'] = MerossBulbProperty(
+                    self,
+                    'colorTemperature',
+                    {
+                        '@type': 'ColorTemperatureProperty',
+                        'title': 'Color Temperature',
+                        'type': 'integer',
+                        'unit': 'kelvin',
+                        'minimum': 2700,
+                        'maximum': 6500,
+                    },
+                    color['temperature'] * (6500 - 2700) / 100 + 2700
+                )
+
+            if self.meross_dev.is_rgb() and \
+                    self.meross_dev.is_light_temperature():
+                self.properties['colorMode'] = MerossBulbProperty(
+                    self,
+                    'colorMode',
+                    {
+                        '@type': 'ColorModeProperty',
+                        'title': 'Color Mode',
+                        'type': 'string',
+                        'enum': [
+                            'color',
+                            'temperature',
+                        ],
+                        'readOnly': True,
+                    },
+                    'temperature' if color['capacity'] == 6 else 'color'
+                )
+
+            if self.meross_dev.supports_luminance():
+                self.properties['brightness'] = MerossBulbProperty(
+                    self,
+                    'brightness',
+                    {
+                        '@type': 'BrightnessProperty',
+                        'title': 'Brightness',
+                        'type': 'integer',
+                        'unit': 'percent',
+                        'minimum': 0,
+                        'maximum': 100,
+                    },
+                    color['luminance']
+                )
 
         t = threading.Thread(target=self.poll)
         t.daemon = True
@@ -125,27 +146,6 @@ class MerossBulb(MerossDevice):
             try:
                 status = self.meross_dev.get_status(channel=self.channel)
                 self.properties['on'].update(status['onoff'])
-
-                if self.meross_dev.supports_light_control():
-                    color = \
-                        self.meross_dev.get_light_color(channel=self.channel)
-
-                    if 'color' in self.properties:
-                        self.properties['color'].update(
-                            '#{:02x}'.format(color['rgb'])
-                        )
-                    else:
-                        if 'colorTemperature' in self.properties:
-                            self.properties['colorTemperature'].update(
-                                color['temperature'] *
-                                (6500 - 2700) / 100 +
-                                2700
-                            )
-
-                        if 'brightness' in self.properties:
-                            self.properties['brightness'].update(
-                                color['luminance']
-                            )
 
                 self.connected_notify(True)
             except:  # noqa: E722
@@ -163,18 +163,24 @@ class MerossBulb(MerossDevice):
         """Handle a color change."""
         if 'color' in self.properties:
             self.properties['color'].update(
-                '#{:02x}'.format(value['rgb'])
+                '#{:06x}'.format(value['rgb'])
             )
-        else:
-            if 'colorTemperature' in self.properties:
-                self.properties['colorTemperature'].update(
-                    value['temperature'] * (6500 - 2700) / 100 + 2700
-                )
 
-            if 'brightness' in self.properties:
-                self.properties['brightness'].update(
-                    value['luminance']
-                )
+        if 'colorTemperature' in self.properties:
+            self.properties['colorTemperature'].update(
+                value['temperature'] * (6500 - 2700) / 100 + 2700
+            )
+
+        if 'colorMode' in self.properties:
+            if value['capacity'] == 6:
+                self.properties['colorMode'].update('temperature')
+            else:
+                self.properties['colorMode'].update('color')
+
+        if 'brightness' in self.properties:
+            self.properties['brightness'].update(
+                value['luminance']
+            )
 
 
 class MerossOpener(MerossDevice):
@@ -192,18 +198,18 @@ class MerossOpener(MerossDevice):
         MerossDevice.__init__(self, adapter, _id, meross_dev, channel=channel)
 
         self._type = ['DoorSensor']
-        self.type = 'binarySensor'
 
         self.properties['open'] = MerossOpenerProperty(
             self,
             'open',
             {
                 '@type': 'OpenProperty',
-                'label': 'Open',
+                'title': 'Open',
                 'type': 'boolean',
                 'readOnly': True,
             },
-            False)
+            False
+        )
 
         self.add_action('open', {})
         self.add_action('close', {})
@@ -272,17 +278,17 @@ class MerossPlug(MerossDevice):
         MerossDevice.__init__(self, adapter, _id, meross_dev, channel=channel)
 
         self._type = ['OnOffSwitch', 'SmartPlug']
-        self.type = 'onOffSwitch'
 
         self.properties['on'] = MerossPlugProperty(
             self,
             'on',
             {
                 '@type': 'OnOffProperty',
-                'label': 'On/Off',
+                'title': 'On/Off',
                 'type': 'boolean',
             },
-            False)
+            False
+        )
 
         if self.meross_dev.supports_electricity_reading():
             self._type.append('EnergyMonitor')
@@ -292,36 +298,39 @@ class MerossPlug(MerossDevice):
                 'power',
                 {
                     '@type': 'InstantaneousPowerProperty',
-                    'label': 'Power',
+                    'title': 'Power',
                     'type': 'number',
                     'unit': 'watt',
                     'readOnly': True,
                 },
-                0)
+                0
+            )
 
             self.properties['voltage'] = MerossPlugProperty(
                 self,
                 'voltage',
                 {
                     '@type': 'VoltageProperty',
-                    'label': 'Voltage',
+                    'title': 'Voltage',
                     'type': 'number',
                     'unit': 'volt',
                     'readOnly': True,
                 },
-                0)
+                0
+            )
 
             self.properties['current'] = MerossPlugProperty(
                 self,
                 'current',
                 {
                     '@type': 'CurrentProperty',
-                    'label': 'Current',
+                    'title': 'Current',
                     'type': 'number',
                     'unit': 'ampere',
                     'readOnly': True,
                 },
-                0)
+                0
+            )
 
         t = threading.Thread(target=self.poll)
         t.daemon = True

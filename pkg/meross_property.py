@@ -20,9 +20,8 @@ class MerossProperty(Property):
 
     def update(self, value):
         """Update the current value, if necessary."""
-        if value != self.value:
-            self.set_cached_value(value)
-            self.device.notify_property_changed(self)
+        self.set_cached_value(value)
+        self.device.notify_property_changed(self)
 
 
 class MerossBulbProperty(MerossProperty):
@@ -34,6 +33,10 @@ class MerossBulbProperty(MerossProperty):
 
         value -- the value to set
         """
+        color_mode_prop = None
+        if 'colorMode' in self.device.properties:
+            color_mode_prop = self.device.properties['colorMode']
+
         if self.name == 'on':
             success = False
             if value:
@@ -56,6 +59,11 @@ class MerossBulbProperty(MerossProperty):
                 luminance=100,
             )
             self.update(value)
+
+            # update the colorMode property
+            if color_mode_prop is not None:
+                color_mode_prop.set_cached_value('color')
+                self.device.notify_property_changed(color_mode_prop)
         elif self.name == 'colorTemperature':
             temperature = int((value - 2700) / (6500 - 2700) * 100)
 
@@ -70,6 +78,11 @@ class MerossBulbProperty(MerossProperty):
                 luminance=luminance,
             )
             self.update(value)
+
+            # update the colorMode property
+            if color_mode_prop is not None:
+                color_mode_prop.set_cached_value('temperature')
+                self.device.notify_property_changed(color_mode_prop)
         elif self.name == 'brightness':
             capacity = 4
             temperature = -1
