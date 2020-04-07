@@ -17,6 +17,7 @@ Meross smart device adapter for Mozilla WebThings Gateway.
 * MSS310h
 * MSS425e
 * MSS530H
+* MSS710
 * MSG100
 
 # Requirements
