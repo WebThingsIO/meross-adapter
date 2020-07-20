@@ -38,7 +38,7 @@ class MerossAdapter(Adapter):
 
             if 'username' in config and len(config['username']) > 0 and \
                     'password' in config and len(config['password']) > 0:
-                self.manager = MerossManager(
+                self.manager = MerossManager.from_email_and_password(
                     meross_email=config['username'],
                     meross_password=config['password']
                 )

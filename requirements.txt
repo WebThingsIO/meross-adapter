@@ -1,1 +1,1 @@
-meross_iot==0.3.1.7
+git+https://github.com/albertogeniola/MerossIot@0.3.X.X#egg=meross_iot
