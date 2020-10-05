@@ -1,4 +1,4 @@
-"""Meross adapter for Mozilla WebThings Gateway."""
+"""Meross adapter for WebThings Gateway."""
 
 from os import path
 import functools
